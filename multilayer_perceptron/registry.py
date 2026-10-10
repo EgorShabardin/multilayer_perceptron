@@ -53,10 +53,8 @@ class Registry[T]:
 
         def decorator(cls: type[T]) -> type[T]:
             if name in self._registry_dict:
-                raise ValueError(
-                    f"Class with name '{registration_name}' is already "
-                    f"registered in '{self._registry_type}'"
-                )
+                raise ValueError(f"Class with name '{registration_name}' is already "
+                                 f"registered in '{self._registry_type}'")
             self._registry_dict[name] = cls
             return cls
 
@@ -83,8 +81,6 @@ class Registry[T]:
             cls = self._registry_dict[name]
         except KeyError:
             available_names: str = ", ".join(sorted(self._registry_dict)) or "(none)"
-            raise KeyError(
-                f"Class with name '{registration_name}' is not registered in "
-                f"'{self._registry_type}'. Available names: {available_names}"
-            ) from None
+            raise KeyError(f"Class with name '{registration_name}' is not registered in "
+                           f"'{self._registry_type}'. Available names: {available_names}") from None
         return cls(*args, **kwargs)
