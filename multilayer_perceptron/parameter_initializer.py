@@ -29,9 +29,10 @@ class AbstractInitializer(ABC):
         for name, value in (("in_features", in_features), ("out_features", out_features)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer, got {value!r}")
-
+            
         if not np.isfinite(gain) or gain <= 0.0:
             raise ValueError(f"gain must be a positive finite number, got {gain!r}")
+        
         self._in_features: int = in_features
         self._out_features: int = out_features
         self._gain: float = float(gain)
