@@ -108,7 +108,7 @@ class LeakyReLU(AbstractActivationFunction):
 
     Gain is sqrt(2 / (1 + slope^2)).
     """
-    
+
     def __init__(self, slope: float) -> None:
         """Initializes Leaky ReLU.
 
@@ -169,7 +169,7 @@ class Softmax(AbstractActivationFunction):
     """Softmax over the last axis. Gain is 1."""
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
-        exp_value = np.exp(pre_activation - np.max(pre_activation, axis=-1, keepdims=True))
+        exp_value: NDArray[np.float64] = np.exp(pre_activation - np.max(pre_activation, axis=-1, keepdims=True))
         self._cache = exp_value / np.sum(exp_value, axis=-1, keepdims=True)
         return self._cache.copy()
 
