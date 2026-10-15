@@ -39,7 +39,6 @@ class Registry[T]:
 
         Args:
             registration_name (str): The name to register the class under.
-                Case-insensitive; leading and trailing whitespace is ignored.
 
         Returns:
             Callable[[type[T]], type[T]]: A decorator that adds the class
@@ -65,7 +64,6 @@ class Registry[T]:
 
         Args:
             registration_name (str): The name the class was registered under.
-                Case-insensitive; leading and trailing whitespace is ignored.
             *args (Any): Positional arguments for the class constructor.
             **kwargs (Any): Keyword arguments for the class constructor.
 

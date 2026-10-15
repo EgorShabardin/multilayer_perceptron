@@ -65,7 +65,7 @@ class AbstractLossFunction(ABC):
         """Computes the gradient from the cache."""
 
 
-_LOSS_REGISTRY: Registry[AbstractLossFunction] = Registry("losses")
+_LOSS_REGISTRY: Registry[AbstractLossFunction] = Registry("Losses")
 
 
 @_LOSS_REGISTRY.register(registration_name="mse")
@@ -122,7 +122,7 @@ class BinaryCrossEntropy(AbstractLossFunction):
 
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
         prediction = np.clip(prediction, self._eps, 1.0 - self._eps)
-        self._cache = ((prediction - target) / (prediction * (1.0 - prediction)))
+        self._cache = (prediction - target) / (prediction * (1.0 - prediction))
         return float(-np.mean(target * np.log(prediction) + (1 - target) * np.log1p(-prediction)))
 
     def _backward(self) -> NDArray[np.float64]:
@@ -183,7 +183,7 @@ class CategoricalCrossEntropy(AbstractLossFunction):
 class CategoricalCrossEntropyWithLogits(AbstractLossFunction):
     """Categorical cross-entropy on raw logits.
 
-    L = -mean(sum(target * log_softmax, axis=-1))
+    L = -mean(sum(y * log_softmax, axis=-1)).
     Gradient: (softmax(z) - y) / n_samples. Use Identity as the last activation.
     """
     

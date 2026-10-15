@@ -58,7 +58,7 @@ class AbstractActivationFunction(ABC):
         if self._shape is None:
             raise RuntimeError("backward() was called before forward()")
         output_gradient = np.asarray(output_gradient, dtype=np.float64)
-    
+
         if output_gradient.shape != self._shape:
             raise ValueError(f"Shape mismatch: expected {self._shape}, got {output_gradient.shape}")
         return self._backward(output_gradient)
@@ -72,7 +72,7 @@ class AbstractActivationFunction(ABC):
         """Computes the input gradient from the output gradient and the cache."""
 
 
-_ACTIVATION_REGISTRY: Registry[AbstractActivationFunction] = Registry("activations")
+_ACTIVATION_REGISTRY: Registry[AbstractActivationFunction] = Registry("Activations")
 
 
 @_ACTIVATION_REGISTRY.register(registration_name="identity")
@@ -92,7 +92,7 @@ class ReLU(AbstractActivationFunction):
 
     @property
     def gain(self) -> float:
-        return np.sqrt(2.0)
+        return float(np.sqrt(2.0))
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         self._cache = pre_activation > 0.0
@@ -126,7 +126,7 @@ class LeakyReLU(AbstractActivationFunction):
 
     @property
     def gain(self) -> float:
-        return np.sqrt(2.0 / (1.0 + self._slope * self._slope))
+        return float(np.sqrt(2.0 / (1.0 + self._slope * self._slope)))
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         self._cache = pre_activation > 0.0

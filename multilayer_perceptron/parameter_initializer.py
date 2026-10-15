@@ -9,8 +9,8 @@ from .registry import Registry
 class AbstractInitializer(ABC):
     """Base class for weight and bias initializers of a linear layer.
 
-    The weight matrix has shape (in_features, out_features), i.e. the layer
-    computes y = x @ W + b. Biases are always initialized with zeros.
+    The weight matrix has shape (in_features, out_features).
+    Biases are always initialized with zeros.
     """
 
     def __init__(self, in_features: int, out_features: int, gain: float) -> None:
@@ -29,10 +29,10 @@ class AbstractInitializer(ABC):
         for name, value in (("in_features", in_features), ("out_features", out_features)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError(f"{name} must be a positive integer, got {value!r}")
-            
+        
         if not np.isfinite(gain) or gain <= 0.0:
             raise ValueError(f"gain must be a positive finite number, got {gain!r}")
-        
+
         self._in_features: int = in_features
         self._out_features: int = out_features
         self._gain: float = float(gain)
@@ -63,7 +63,7 @@ class AbstractInitializer(ABC):
         """
 
 
-_INITIALIZER_REGISTRY: Registry[AbstractInitializer] = Registry("initializers")
+_INITIALIZER_REGISTRY: Registry[AbstractInitializer] = Registry("Initializers")
 
 
 @_INITIALIZER_REGISTRY.register(registration_name="xavier_normal")
