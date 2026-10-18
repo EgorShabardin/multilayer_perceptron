@@ -12,8 +12,7 @@ class AbstractOptimizer(ABC):
     """Base class for optimizers.
 
     Subclasses implement update_parameters, which performs one optimization
-    step using the gradients stored by the most recent backward call of
-    each layer.
+    step using the gradients stored by the most recent backward call of each layer.
     """
 
     @abstractmethod
@@ -33,7 +32,7 @@ _OPTIMIZER_REGISTRY: Registry[AbstractOptimizer] = Registry("Optimizers")
 class SGD(AbstractOptimizer):
     """Stochastic gradient descent.
 
-    Update rule: p = p - lr * g.
+    Update rule: parameter = parameter - learning_rate * gradient.
     """
 
     def __init__(self, learning_rate: float = 1e-3) -> None:
@@ -65,8 +64,8 @@ class SGD(AbstractOptimizer):
 class Momentum(AbstractOptimizer):
     """Stochastic gradient descent with momentum.
 
-    Update rule: v = beta * v + g,
-        p = p - lr * v.
+    Update rule: velocity = beta * velocity + gradient,
+        parameter = parameter - learning_rate * velocity.
     """
 
     def __init__(self, learning_rate: float = 1e-3, beta: float = 0.9) -> None:
@@ -79,7 +78,6 @@ class Momentum(AbstractOptimizer):
         Raises:
             ValueError: If learning_rate is not a positive finite number or beta is not in [0, 1).
         """
-
         if not np.isfinite(learning_rate) or learning_rate <= 0.0:
             raise ValueError(f"learning_rate must be a positive finite number, got {learning_rate!r}")
         if not 0.0 <= beta < 1.0:
@@ -92,7 +90,7 @@ class Momentum(AbstractOptimizer):
         """Updates the velocity of each parameter and moves the parameter.
 
         Velocities are created with zeros the first time a layer or
-        parameter is seen.
+            parameter is seen.
 
         Args:
             layers_lst (list[AbstractNetworkLayer]): Layers whose parameters are
@@ -111,11 +109,11 @@ class Momentum(AbstractOptimizer):
 class Adam(AbstractOptimizer):
     """Adam optimizer.
 
-    Update rule: m = beta1 * m + (1 - beta1) * g,
-        v = beta2 * v + (1 - beta2) * g^2,
-        m_hat = m / (1 - beta1^t),
-        v_hat = v / (1 - beta2^t),
-        p = p - lr * m_hat / (sqrt(v_hat) + eps).
+    Update rule: first_moment = first_beta * first_moment + (1 - first_beta) * gradient,
+        second_moment = second_beta * second_moment + (1 - second_beta) * gradient^2,
+        first_moment_hat = first_moment / (1 - first_beta^t),
+        second_moment_hat = second_moment / (1 - second_beta^t),
+        parameter = parameter - learning_rate * first_moment_hat / (sqrt(second_moment_hat) + eps).
     """
 
     def __init__(self, learning_rate: float = 1e-3, first_beta: float = 0.9,
@@ -126,8 +124,7 @@ class Adam(AbstractOptimizer):
             learning_rate (float): The step size. Must be a positive finite number.
             first_beta (float): Decay rate of the first moment, in the interval [0, 1).
             second_beta (float): Decay rate of the second moment, in the interval [0, 1).
-            eps (float): Small positive constant added to the denominator
-                for numerical stability.
+            eps (float): Small positive constant added to the denominator for numerical stability.
 
         Raises:
             ValueError: If learning_rate or eps is not a positive finite
@@ -154,8 +151,8 @@ class Adam(AbstractOptimizer):
         """Updates both moments of each parameter and moves the parameter.
 
         Increments the step counter once per call, then applies the bias
-        corrected Adam update. Moments are created with zeros the first
-        time a layer or parameter is seen.
+            corrected Adam update. Moments are created with zeros the first
+            time a layer or parameter is seen.
 
         Args:
             layers_lst (list[AbstractNetworkLayer]): Layers whose parameters are

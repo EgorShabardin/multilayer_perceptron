@@ -76,7 +76,7 @@ class Registry[T]:
         """
         name: str = self._normalize(registration_name)
         try:
-            cls = self._registry_dict[name]
+            cls: type[T] = self._registry_dict[name]
         except KeyError:
             available_names: str = ", ".join(sorted(self._registry_dict)) or "(none)"
             raise KeyError(f"Class with name '{registration_name}' is not registered in "

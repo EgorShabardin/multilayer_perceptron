@@ -58,7 +58,6 @@ class AbstractActivationFunction(ABC):
         if self._shape is None:
             raise RuntimeError("backward() was called before forward()")
         output_gradient = np.asarray(output_gradient, dtype=np.float64)
-
         if output_gradient.shape != self._shape:
             raise ValueError(f"Shape mismatch: expected {self._shape}, got {output_gradient.shape}")
         return self._backward(output_gradient)
@@ -77,7 +76,7 @@ _ACTIVATION_REGISTRY: Registry[AbstractActivationFunction] = Registry("Activatio
 
 @_ACTIVATION_REGISTRY.register(registration_name="identity")
 class Identity(AbstractActivationFunction):
-    """Identity activation: f(x) = x. Gain is 1."""
+    """Identity activation: f(x) = x. Gain is 1.0."""
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         return pre_activation.copy()
@@ -88,7 +87,7 @@ class Identity(AbstractActivationFunction):
 
 @_ACTIVATION_REGISTRY.register(registration_name="relu")
 class ReLU(AbstractActivationFunction):
-    """ReLU: f(x) = max(x, 0). Gain is sqrt(2)."""
+    """ReLU: f(x) = max(x, 0). Gain is sqrt(2.0)."""
 
     @property
     def gain(self) -> float:
@@ -106,10 +105,10 @@ class ReLU(AbstractActivationFunction):
 class LeakyReLU(AbstractActivationFunction):
     """Leaky ReLU: f(x) = x if x > 0 else slope * x.
 
-    Gain is sqrt(2 / (1 + slope^2)).
+    Gain is sqrt(2.0 / (1.0 + slope^2)).
     """
 
-    def __init__(self, slope: float) -> None:
+    def __init__(self, slope: float = 0.01) -> None:
         """Initializes Leaky ReLU.
 
         Args:
@@ -120,7 +119,6 @@ class LeakyReLU(AbstractActivationFunction):
         """
         if not 0.0 < slope < 1.0:
             raise ValueError(f"Slope must be in the open interval (0, 1), got {slope!r}")
-
         super().__init__()
         self._slope: float = float(slope)
 
@@ -138,7 +136,7 @@ class LeakyReLU(AbstractActivationFunction):
 
 @_ACTIVATION_REGISTRY.register(registration_name="sigmoid")
 class Sigmoid(AbstractActivationFunction):
-    """Sigmoid: f(x) = 1 / (1 + exp(-x)). Gain is 1."""
+    """Sigmoid: f(x) = 1.0 / (1.0 + exp(-x)). Gain is 1.0."""
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         self._cache = 1.0 / (1.0 + np.exp(-np.clip(pre_activation, -500.0, 500.0)))
@@ -150,11 +148,11 @@ class Sigmoid(AbstractActivationFunction):
 
 @_ACTIVATION_REGISTRY.register(registration_name="tanh")
 class Tanh(AbstractActivationFunction):
-    """Hyperbolic tangent. Gain is 5/3."""
+    """Hyperbolic tangent. Gain is 5.0/3.0."""
 
     @property
     def gain(self) -> float:
-        return 5.0 / 3.0
+        return float(5.0 / 3.0)
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         self._cache = np.tanh(pre_activation)
@@ -166,7 +164,7 @@ class Tanh(AbstractActivationFunction):
 
 @_ACTIVATION_REGISTRY.register(registration_name="softmax")
 class Softmax(AbstractActivationFunction):
-    """Softmax over the last axis. Gain is 1."""
+    """Softmax over the last axis. Gain is 1.0."""
 
     def _forward(self, pre_activation: NDArray[np.float64]) -> NDArray[np.float64]:
         exp_value: NDArray[np.float64] = np.exp(pre_activation - np.max(pre_activation, axis=-1, keepdims=True))

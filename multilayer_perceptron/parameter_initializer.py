@@ -19,8 +19,8 @@ class AbstractInitializer(ABC):
         Args:
             in_features (int): The number of input features.
             out_features (int): The number of output features.
-            gain (float): Scaling factor for the weights, usually provided
-                by the activation function that follows the layer.
+            gain (float): Scaling factor for the weights, provided by the
+                activation function that follows the layer.
 
         Raises:
             ValueError: If in_features or out_features is not a positive
@@ -28,11 +28,10 @@ class AbstractInitializer(ABC):
         """
         for name, value in (("in_features", in_features), ("out_features", out_features)):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise ValueError(f"{name} must be a positive integer, got {value!r}")
-        
+                raise ValueError(f"{name} must be a positive integer, got {value!r}") 
         if not np.isfinite(gain) or gain <= 0.0:
             raise ValueError(f"gain must be a positive finite number, got {gain!r}")
-
+        
         self._in_features: int = in_features
         self._out_features: int = out_features
         self._gain: float = float(gain)
@@ -48,7 +47,7 @@ class AbstractInitializer(ABC):
             dict[str, NDArray[np.float64]]: "weight" of shape (in_features, out_features)
                 and "bias" of shape (out_features,).
         """
-        rng = np.random.default_rng(rng)
+        rng: np.random.Generator = np.random.default_rng(rng)
         return {"weight": self._init_weight(rng), "bias": np.zeros(self._out_features, dtype=np.float64)}
 
     @abstractmethod
@@ -74,7 +73,7 @@ class XavierNormal(AbstractInitializer):
     """
 
     def _init_weight(self, rng: np.random.Generator) -> NDArray[np.float64]:
-        std: float = self._gain * np.sqrt(2.0 / (self._in_features + self._out_features))
+        std: float = float(self._gain * np.sqrt(2.0 / (self._in_features + self._out_features)))
         return rng.normal(loc=0.0, scale=std, size=(self._in_features, self._out_features))
 
 
@@ -86,7 +85,7 @@ class XavierUniform(AbstractInitializer):
     """
 
     def _init_weight(self, rng: np.random.Generator) -> NDArray[np.float64]:
-        limit: float = self._gain * np.sqrt(6.0 / (self._in_features + self._out_features))
+        limit: float = float(self._gain * np.sqrt(6.0 / (self._in_features + self._out_features)))
         return rng.uniform(low=-limit, high=limit, size=(self._in_features, self._out_features))
 
 
@@ -98,7 +97,7 @@ class KaimingNormal(AbstractInitializer):
     """
 
     def _init_weight(self, rng: np.random.Generator) -> NDArray[np.float64]:
-        std: float = self._gain / np.sqrt(self._in_features)
+        std: float = float(self._gain / np.sqrt(self._in_features))
         return rng.normal(loc=0.0, scale=std, size=(self._in_features, self._out_features))
 
 
@@ -110,7 +109,7 @@ class KaimingUniform(AbstractInitializer):
     """
 
     def _init_weight(self, rng: np.random.Generator) -> NDArray[np.float64]:
-        limit: float = self._gain * np.sqrt(3.0 / self._in_features)
+        limit: float = float(self._gain * np.sqrt(3.0 / self._in_features))
         return rng.uniform(low=-limit, high=limit, size=(self._in_features, self._out_features))
 
 
@@ -121,8 +120,8 @@ def get_initializer(initialization_name: str, in_features: int, out_features: in
         initialization_name (str): Registered initializer name.
         in_features (int): The number of input features.
         out_features (int): The number of output features.
-        gain (float): Scaling factor for the weights, usually provided
-            by the activation function that follows the layer.
+        gain (float): Scaling factor for the weights, provided by the
+            activation function that follows the layer.
 
     Returns:
         AbstractInitializer: A new initializer instance.

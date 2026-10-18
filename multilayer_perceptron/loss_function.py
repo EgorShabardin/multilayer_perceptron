@@ -1,10 +1,19 @@
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
 from .registry import Registry
+
+
+class TaskType(StrEnum):
+    """Kind of task a loss function is designed for."""
+
+    REGRESSION = "regression"
+    BINARY_CLASSIFICATION = "binary_classification"
+    MULTICLASS_CLASSIFICATION = "multiclass_classification"
 
 
 class AbstractLossFunction(ABC):
@@ -35,11 +44,10 @@ class AbstractLossFunction(ABC):
         """
         prediction = np.asarray(prediction, dtype=np.float64)
         target = np.asarray(target, dtype=np.float64)
-
         if prediction.shape != target.shape:
             raise ValueError(f"Shape mismatch: prediction {prediction.shape}, target {target.shape}")
         
-        loss = self._forward(prediction, target)
+        loss: float = self._forward(prediction, target)
         self._forward_called = True
         return loss
     
@@ -56,6 +64,16 @@ class AbstractLossFunction(ABC):
             raise RuntimeError("backward() was called before forward()")
         return self._backward()
 
+    @property
+    def from_logits(self) -> bool:
+        """Whether the loss expects raw logits rather than probabilities."""
+        return False
+    
+    @property
+    @abstractmethod
+    def task_type(self) -> TaskType:
+        """Kind of task this loss is designed for."""
+
     @abstractmethod
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
         """Computes the loss and caches what _backward needs."""
@@ -70,9 +88,10 @@ _LOSS_REGISTRY: Registry[AbstractLossFunction] = Registry("Losses")
 
 @_LOSS_REGISTRY.register(registration_name="mse")
 class MeanSquaredError(AbstractLossFunction):
-    """Mean squared error: L = mean((p - y)^2).
+    """Mean squared error: L = mean((prediction - target)^2).
 
-    The mean is taken over all elements. Gradient: 2 * (p - y) / size.
+    The mean is taken over all elements.
+    Gradient: 2 * (prediction - target) / size.
     """
 
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
@@ -82,12 +101,17 @@ class MeanSquaredError(AbstractLossFunction):
     def _backward(self) -> NDArray[np.float64]:
         return 2.0 * self._cache / self._cache.size
 
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.REGRESSION
+
 
 @_LOSS_REGISTRY.register(registration_name="mae")
 class MeanAbsoluteError(AbstractLossFunction):
-    """Mean absolute error: L = mean(|p - y|).
+    """Mean absolute error: L = mean(|prediction - target|).
 
-    The mean is taken over all elements. Gradient: sign(p - y) / size.
+    The mean is taken over all elements.
+    Gradient: sign(prediction - target) / size.
     """
 
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
@@ -97,13 +121,18 @@ class MeanAbsoluteError(AbstractLossFunction):
     def _backward(self) -> NDArray[np.float64]:
         return np.sign(self._cache) / self._cache.size
 
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.REGRESSION
+
 
 @_LOSS_REGISTRY.register(registration_name="bce")
 class BinaryCrossEntropy(AbstractLossFunction):
     """Binary cross-entropy on probabilities.
 
-    L = -mean(y * log(p) + (1 - y) * log(1 - p)), averaged over all elements.
-    Gradient: ((p - y) / (p * (1 - p))) / size.
+    L = -mean(target * log(prediction) + (1 - target) * log(1 - prediction)),
+    averaged over all elements.
+    Gradient: ((prediction - target) / (prediction * (1 - prediction))) / size.
     """
 
     def __init__(self, eps: float = 1e-8) -> None:
@@ -128,13 +157,18 @@ class BinaryCrossEntropy(AbstractLossFunction):
     def _backward(self) -> NDArray[np.float64]:
         return self._cache / self._cache.size
 
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.BINARY_CLASSIFICATION
+
 
 @_LOSS_REGISTRY.register(registration_name="bce_with_logits")
 class BinaryCrossEntropyWithLogits(AbstractLossFunction):
     """Binary cross-entropy on raw logits.
 
-    L = mean(max(z, 0) - z * y + log(1 + exp(-|z|))), averaged over all elements.
-    Gradient: (sigmoid(z) - y) / size. Use Identity as the last activation.
+    L = mean(max(prediction, 0) - prediction * target + log(1 + exp(-|prediction|))),
+    averaged over all elements.
+    Gradient: (sigmoid(prediction) - target) / size. Use Identity as the last activation.
     """
 
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
@@ -146,13 +180,21 @@ class BinaryCrossEntropyWithLogits(AbstractLossFunction):
     def _backward(self) -> NDArray[np.float64]:
         return self._cache / self._cache.size
 
+    @property
+    def from_logits(self) -> bool:
+        return True
+    
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.BINARY_CLASSIFICATION
+
 
 @_LOSS_REGISTRY.register(registration_name="cce")
 class CategoricalCrossEntropy(AbstractLossFunction):
     """Categorical cross-entropy on probabilities.
 
-    L = -mean(sum(y * log(p), axis=-1)). Expects one-hot targets and p that
-    sums to 1, e.g. after Softmax. Gradient: -y / p / n_samples
+    L = -mean(sum(target * log(prediction), axis=-1)). Expects one-hot
+    targets and p that sums to 1. Gradient: -target / prediction / n_samples
     """
 
     def __init__(self, eps: float = 1e-8) -> None:
@@ -178,13 +220,18 @@ class CategoricalCrossEntropy(AbstractLossFunction):
         n_samples: int = self._cache.size // self._cache.shape[-1]
         return self._cache / n_samples
 
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.MULTICLASS_CLASSIFICATION
+
 
 @_LOSS_REGISTRY.register(registration_name="cce_with_logits")
 class CategoricalCrossEntropyWithLogits(AbstractLossFunction):
     """Categorical cross-entropy on raw logits.
 
-    L = -mean(sum(y * log_softmax, axis=-1)).
-    Gradient: (softmax(z) - y) / n_samples. Use Identity as the last activation.
+    L = -mean(sum(target * log_softmax, axis=-1)).
+    Gradient: (softmax(prediction) - target) / n_samples.
+    Use Identity as the last activation.
     """
     
     def _forward(self, prediction: NDArray[np.float64], target: NDArray[np.float64]) -> float:
@@ -196,6 +243,14 @@ class CategoricalCrossEntropyWithLogits(AbstractLossFunction):
     def _backward(self) -> NDArray[np.float64]:
         n_samples: int = self._cache.size // self._cache.shape[-1]
         return self._cache / n_samples
+
+    @property
+    def from_logits(self) -> bool:
+        return True
+
+    @property
+    def task_type(self) -> TaskType:
+        return TaskType.MULTICLASS_CLASSIFICATION
 
 
 def get_loss_function(loss_name: str, **kwargs: Any) -> AbstractLossFunction:
