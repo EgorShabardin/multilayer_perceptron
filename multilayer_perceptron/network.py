@@ -1,4 +1,5 @@
 import json
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Self
 
@@ -35,7 +36,7 @@ class PerceptronNetwork:
         """
         if not network_layers:
             raise ValueError("network_layers must not be empty")
-        for index, (previous, current) in enumerate(zip(network_layers, network_layers[1:])):
+        for index, (previous, current) in enumerate(pairwise(network_layers)):
             out_features = previous.config["out_features"]
             in_features = current.config["in_features"]
             if out_features != in_features:

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multilayer-perceptron"
+version = "0.1.0"
+description = "A multilayer perceptron implemented from scratch with NumPy"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+examples = ["pandas>=2.0", "matplotlib>=3.8"]
+dev = ["pytest", "ruff"]
+
+[tool.setuptools]
+packages = ["multilayer_perceptron"]
+
+[tool.ruff]
+line-length = 300
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

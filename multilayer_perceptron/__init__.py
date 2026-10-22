@@ -1,11 +1,11 @@
 """A multilayer perceptron library built on NumPy."""
 
-from .parameter_initializer import AbstractInitializer, get_initializer
 from .activation_function import AbstractActivationFunction, get_activation
 from .loss_function import AbstractLossFunction, TaskType, get_loss_function
-from .optimizers import AbstractOptimizer, get_optimizer
-from .network_layer import AbstractNetworkLayer, DenseNetworkLayer
 from .network import PerceptronNetwork
+from .network_layer import AbstractNetworkLayer, DenseNetworkLayer
+from .optimizers import AbstractOptimizer, get_optimizer
+from .parameter_initializer import AbstractInitializer, get_initializer
 
 __all__ = [
     "AbstractActivationFunction",
