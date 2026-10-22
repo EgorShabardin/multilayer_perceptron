@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 examples = ["pandas>=2.0", "matplotlib>=3.8"]
-dev = ["pytest", "ruff"]
+dev = ["ruff"]
 
 [tool.setuptools]
 packages = ["multilayer_perceptron"]
@@ -23,6 +23,3 @@ packages = ["multilayer_perceptron"]
 [tool.ruff]
 line-length = 300
 target-version = "py312"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
